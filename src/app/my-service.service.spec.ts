@@ -9,6 +9,7 @@ import {
 import {MockBackend, MockConnection} from '@angular/http/testing';
 
 import { MyServiceService } from './my-service.service';
+import { HttpClient, HttpHandler } from '@angular/common/http';
 
 describe('MyServiceService', () => {
   let myService: MyServiceService;
@@ -44,7 +45,11 @@ describe('MyServiceService', () => {
       imports: [HttpModule],
       providers: [
         {provide: XHRBackend, useClass: MockBackend},
-        MyServiceService]
+        MyServiceService,
+        MockBackend,
+        HttpClient,
+        HttpHandler
+      ]
     });
 
     // Get the MockBackend
@@ -80,6 +85,8 @@ describe('MyServiceService', () => {
         .subscribe(res => {
           expect(res).toEqual(mockResponse);
         });
+
+        tick();
     })
   ));
 });
