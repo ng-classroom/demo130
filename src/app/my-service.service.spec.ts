@@ -1,19 +1,10 @@
-import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
-import {
-  HttpModule,
-  XHRBackend,
-  ResponseOptions,
-  Response,
-  RequestMethod
-} from '@angular/http';
-import {MockBackend, MockConnection} from '@angular/http/testing';
+import { TestBed, inject, async } from '@angular/core/testing';
+import {MockBackend} from '@angular/http/testing';
+import {HttpClientTestingModule, HttpTestingController} from '@angular/common/http/testing';
 
 import { MyServiceService } from './my-service.service';
-import { HttpClient, HttpHandler } from '@angular/common/http';
 
 describe('MyServiceService', () => {
-  let myService: MyServiceService;
-  let backend: MockBackend;
 
   const mockResponse = {
     'name': 'Biggs Darklighter',
@@ -42,51 +33,25 @@ describe('MyServiceService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpModule],
-      providers: [
-        {provide: XHRBackend, useClass: MockBackend},
-        MyServiceService,
-        MockBackend,
-        HttpClient,
-        HttpHandler
-      ]
+      imports: [HttpClientTestingModule],
+      providers: [MyServiceService]
     });
-
-    // Get the MockBackend
-    backend = TestBed.get(MockBackend);
-
-    // Returns a service with the MockBackend so we can test with dummy responses
-    myService = TestBed.get(MyServiceService);
   });
 
-  it('should be created', inject([MyServiceService], (service: MyServiceService) => {
-    expect(service).toBeTruthy();
-  }));
-
-  it('should get results', fakeAsync(
-    inject([
-      XHRBackend,
-      MyServiceService
-    ], (mockBackend: any, myServiceTested: MyServiceService) => {
-      const characterNumber = 9;
-      const generatedURL = 'https://swapi.co/api/people/' + characterNumber + '/';
-
-      mockBackend.connections.subscribe(
-        (connection: MockConnection) => {
-          expect(connection.request.method).toBe(RequestMethod.Get);
-          expect(connection.request.url).toBe(generatedURL);
-
-          connection.mockRespond(new Response(
-            new ResponseOptions({ body: mockResponse })
-          ));
-        });
-
-        myServiceTested.getCharacter()
-        .subscribe(res => {
+  describe('get data', () => {
+    it('should get results',
+    inject([HttpTestingController, MyServiceService], (httpMock: HttpTestingController, myServiceTested: MyServiceService) => {
+      const swapiUrl = 'https://swapi.co/api/people/9/';
+      myServiceTested.getCharacter()
+      .subscribe(
+        (res) => {
           expect(res).toEqual(mockResponse);
-        });
-
-        tick();
+        }
+      );
+      const req = httpMock.expectOne(swapiUrl);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockResponse);
     })
-  ));
+  );
+  });
 });
